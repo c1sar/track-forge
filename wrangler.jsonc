@@ -1,0 +1,32 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "garmin-cloud",
+  "compatibility_date": "2026-07-13",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "main": "@astrojs/cloudflare/entrypoints/server",
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS"
+  },
+  "observability": {
+    "enabled": true
+  },
+  // D1: usuarios, cuentas Garmin vinculadas y metricas diarias (historico + CSV).
+  // El database_id es un placeholder para desarrollo local; en produccion se
+  // reemplaza por el id real devuelto por `wrangler d1 create garmin-cloud`.
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "garmin-cloud",
+      "database_id": "00000000-0000-0000-0000-000000000000",
+      "migrations_dir": "migrations"
+    }
+  ],
+  // KV: sesiones de aplicacion, estado MFA pendiente y tokens Garmin cifrados.
+  "kv_namespaces": [
+    {
+      "binding": "APP_KV",
+      "id": "00000000000000000000000000000000"
+    }
+  ]
+}

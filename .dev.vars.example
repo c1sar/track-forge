@@ -1,0 +1,10 @@
+# Secretos para desarrollo local con `wrangler dev`.
+# Copia este archivo a `.dev.vars` (git-ignored) y rellena valores reales.
+# En produccion se configuran con: wrangler secret put <NOMBRE>
+
+# Clave AES-256 en base64 (32 bytes). Genera una con:
+#   node -e "console.log(crypto.getRandomValues(new Uint8Array(32)).toBase64?.() ?? Buffer.from(crypto.getRandomValues(new Uint8Array(32))).toString('base64'))"
+TOKEN_ENCRYPTION_KEY="reemplaza-con-32-bytes-base64"
+
+# Secreto para firmar/derivar identificadores de sesion (cadena aleatoria larga).
+SESSION_SECRET="reemplaza-con-cadena-aleatoria-larga"

@@ -1,0 +1,55 @@
+---
+import '@/styles/global.css';
+
+interface Props {
+  title?: string;
+}
+
+const { title = 'Garmin Cloud' } = Astro.props;
+const currentUser = Astro.locals.currentUser;
+---
+
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="generator" content={Astro.generator} />
+    <title>{title}</title>
+  </head>
+  <body class="min-h-screen bg-background text-foreground antialiased">
+    <header class="border-b">
+      <div class="mx-auto flex h-14 max-w-6xl items-center justify-between px-4">
+        <a href="/" class="font-heading text-sm font-semibold">Garmin Cloud</a>
+        {
+          currentUser ? (
+            <div class="flex items-center gap-3 text-sm">
+              <span class="text-muted-foreground">{currentUser.email}</span>
+              <form method="post" action="/api/auth/logout" data-logout>
+                <button
+                  type="submit"
+                  class="rounded-md border px-2.5 py-1 text-sm hover:bg-muted"
+                >
+                  Salir
+                </button>
+              </form>
+            </div>
+          ) : null
+        }
+      </div>
+    </header>
+    <main class="mx-auto max-w-6xl px-4 py-8">
+      <slot />
+    </main>
+
+    <script>
+      // Logout via fetch para poder redirigir tras limpiar la sesión.
+      const form = document.querySelector<HTMLFormElement>('form[data-logout]');
+      form?.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        await fetch('/api/auth/logout', { method: 'POST' });
+        window.location.href = '/login';
+      });
+    </script>
+  </body>
+</html>

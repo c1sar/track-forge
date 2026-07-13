@@ -1,0 +1,10 @@
+---
+import { ConnectGarminForm } from '@/features/garmin-connect/components/ConnectGarminForm';
+import Layout from '@/layouts/Layout.astro';
+---
+
+<Layout title="Vincular Garmin · Garmin Cloud">
+  <div class="flex min-h-[70vh] items-center justify-center">
+    <ConnectGarminForm client:load />
+  </div>
+</Layout>

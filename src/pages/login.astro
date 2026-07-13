@@ -1,0 +1,10 @@
+---
+import { AuthForm } from '@/features/auth/components/AuthForm';
+import Layout from '@/layouts/Layout.astro';
+---
+
+<Layout title="Iniciar sesión · Garmin Cloud">
+  <div class="flex min-h-[70vh] items-center justify-center">
+    <AuthForm mode="login" client:load />
+  </div>
+</Layout>
