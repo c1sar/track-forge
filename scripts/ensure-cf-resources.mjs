@@ -22,32 +22,48 @@ const D1_PLACEHOLDER = '00000000-0000-0000-0000-000000000000';
 const KV_PLACEHOLDER = '00000000000000000000000000000000';
 
 const D1_DATABASE_NAME = 'garmin-cloud';
-const KV_BINDING = 'APP_KV';
-const WORKER_NAME = 'garmin-cloud';
-// wrangler nombra el namespace como `<worker>-<binding>` al crearlo por binding.
-const KV_TITLE = `${WORKER_NAME}-${KV_BINDING}`;
+const KV_NAMESPACE_NAME = 'APP_KV';
+// Wrangler v4 usa el nombre del namespace como title (sin prefijo del worker).
+const KV_LEGACY_TITLE = `garmin-cloud-${KV_NAMESPACE_NAME}`;
 
-/** Ejecuta wrangler y devuelve stdout como string. */
-function wrangler(args) {
-  return execFileSync('pnpm', ['exec', 'wrangler', ...args], {
-    encoding: 'utf8',
-    stdio: ['ignore', 'pipe', 'inherit'],
-  });
+/** Ejecuta wrangler y devuelve stdout + stderr combinados. */
+function wrangler(args, { allowFailure = false } = {}) {
+  try {
+    const stdout = execFileSync('pnpm', ['exec', 'wrangler', ...args], {
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+    return { ok: true, output: stdout };
+  } catch (error) {
+    const output = `${error.stdout ?? ''}${error.stderr ?? ''}`;
+    if (allowFailure) {
+      return { ok: false, output, error };
+    }
+    if (output) process.stderr.write(output);
+    throw error;
+  }
 }
 
-/** Ejecuta wrangler esperando JSON y lo parsea; devuelve null si no es JSON. */
-function wranglerJson(args) {
-  const out = wrangler(args);
-  const start = out.indexOf('[');
-  const objStart = out.indexOf('{');
+/** Extrae JSON (array u objeto) del output de wrangler. */
+function parseWranglerJson(output) {
+  const start = output.indexOf('[');
+  const objStart = output.indexOf('{');
   const from =
     start === -1 ? objStart : objStart === -1 ? start : Math.min(start, objStart);
   if (from === -1) return null;
   try {
-    return JSON.parse(out.slice(from));
+    return JSON.parse(output.slice(from));
   } catch {
     return null;
   }
+}
+
+/** Extrae un id hex de 32 chars del snippet de config que imprime wrangler. */
+function extractKvIdFromOutput(output) {
+  const match =
+    output.match(/id\s*=\s*"([a-f0-9]{32})"/i) ??
+    output.match(/"id"\s*:\s*"([a-f0-9]{32})"/i);
+  return match?.[1] ?? null;
 }
 
 function assertEnv() {
@@ -60,9 +76,25 @@ function assertEnv() {
   }
 }
 
+function listKvNamespaces() {
+  const { output } = wrangler(['kv', 'namespace', 'list']);
+  return parseWranglerJson(output) ?? [];
+}
+
+/** Busca el namespace KV por title (soporta títulos legacy de wrangler antiguo). */
+function findKvNamespace(list) {
+  if (!Array.isArray(list)) return null;
+  return (
+    list.find((ns) => ns.title === KV_NAMESPACE_NAME) ??
+    list.find((ns) => ns.title === KV_LEGACY_TITLE) ??
+    list.find((ns) => ns.title?.endsWith(`-${KV_NAMESPACE_NAME}`))
+  );
+}
+
 /** Devuelve el database_id de la D1 `garmin-cloud`, creándola si no existe. */
 function ensureD1() {
-  const list = wranglerJson(['d1', 'list', '--json']) ?? [];
+  const listResult = wrangler(['d1', 'list', '--json']);
+  const list = parseWranglerJson(listResult.output) ?? [];
   const existing = Array.isArray(list)
     ? list.find((db) => db.name === D1_DATABASE_NAME)
     : null;
@@ -72,47 +104,59 @@ function ensureD1() {
   }
 
   console.log(`Creando D1 "${D1_DATABASE_NAME}"...`);
-  const created = wranglerJson(['d1', 'create', D1_DATABASE_NAME]);
+  const createResult = wrangler(['d1', 'create', D1_DATABASE_NAME], { allowFailure: true });
+  const created = parseWranglerJson(createResult.output);
   const uuid = created?.uuid ?? created?.d1_databases?.[0]?.database_id;
-  if (!uuid) {
-    // Fallback: reconsultar la lista tras crear.
-    const relist = wranglerJson(['d1', 'list', '--json']) ?? [];
-    const found = Array.isArray(relist)
-      ? relist.find((db) => db.name === D1_DATABASE_NAME)
-      : null;
-    if (found?.uuid) return found.uuid;
-    console.error('No se pudo obtener el database_id de D1.');
-    process.exit(1);
+  if (uuid) {
+    console.log(`D1 creada (${uuid}).`);
+    return uuid;
   }
-  console.log(`D1 creada (${uuid}).`);
-  return uuid;
+
+  const relist = parseWranglerJson(wrangler(['d1', 'list', '--json']).output) ?? [];
+  const found = Array.isArray(relist)
+    ? relist.find((db) => db.name === D1_DATABASE_NAME)
+    : null;
+  if (found?.uuid) {
+    console.log(`D1 "${D1_DATABASE_NAME}" encontrada tras crear (${found.uuid}).`);
+    return found.uuid;
+  }
+
+  console.error('No se pudo obtener el database_id de D1.');
+  if (createResult.output) console.error(createResult.output);
+  process.exit(1);
 }
 
 /** Devuelve el id del namespace KV, creándolo si no existe. */
 function ensureKv() {
-  const list = wranglerJson(['kv', 'namespace', 'list']) ?? [];
-  const existing = Array.isArray(list)
-    ? list.find((ns) => ns.title === KV_TITLE)
-    : null;
+  const existing = findKvNamespace(listKvNamespaces());
   if (existing?.id) {
-    console.log(`KV "${KV_TITLE}" ya existe (${existing.id}).`);
+    console.log(`KV "${existing.title}" ya existe (${existing.id}).`);
     return existing.id;
   }
 
-  console.log(`Creando KV "${KV_BINDING}"...`);
-  const created = wranglerJson(['kv', 'namespace', 'create', KV_BINDING]);
-  const id = created?.id;
-  if (!id) {
-    const relist = wranglerJson(['kv', 'namespace', 'list']) ?? [];
-    const found = Array.isArray(relist)
-      ? relist.find((ns) => ns.title === KV_TITLE)
-      : null;
-    if (found?.id) return found.id;
-    console.error('No se pudo obtener el id del namespace KV.');
-    process.exit(1);
+  console.log(`Creando KV "${KV_NAMESPACE_NAME}"...`);
+  const createResult = wrangler(['kv', 'namespace', 'create', KV_NAMESPACE_NAME], {
+    allowFailure: true,
+  });
+
+  const idFromOutput = extractKvIdFromOutput(createResult.output);
+  if (idFromOutput) {
+    console.log(`KV creado (${idFromOutput}).`);
+    return idFromOutput;
   }
-  console.log(`KV creado (${id}).`);
-  return id;
+
+  const found = findKvNamespace(listKvNamespaces());
+  if (found?.id) {
+    console.log(`KV "${found.title}" encontrado tras crear (${found.id}).`);
+    return found.id;
+  }
+
+  console.error('No se pudo obtener el id del namespace KV.');
+  if (createResult.output) {
+    console.error('Salida de wrangler kv namespace create:');
+    console.error(createResult.output);
+  }
+  process.exit(1);
 }
 
 /** Reemplaza el placeholder por el id real; deja el archivo intacto si ya es real. */
