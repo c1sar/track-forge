@@ -1,10 +1,10 @@
 import type { DailyMetric, DailyMetricRow } from './types';
 
-/** Acceso a la tabla `daily_metrics` en D1. */
+/** Acceso a la tabla `daily_metrics` en D1 (una fila por usuario+día+fuente). */
 export class MetricsRepository {
   constructor(private readonly db: D1Database) {}
 
-  async upsertMany(userId: string, metrics: DailyMetric[]): Promise<void> {
+  async upsertMany(userId: string, source: string, metrics: DailyMetric[]): Promise<void> {
     if (metrics.length === 0) {
       return;
     }
@@ -12,11 +12,11 @@ export class MetricsRepository {
     const syncedAt = new Date().toISOString();
     const statement = this.db.prepare(
       `INSERT INTO daily_metrics (
-         user_id, date, steps, sleep_seconds, resting_hr, avg_stress,
+         user_id, date, source, steps, sleep_seconds, resting_hr, avg_stress,
          body_battery_low, body_battery_high, hrv_weekly_avg, spo2_avg,
          active_calories, synced_at
-       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-       ON CONFLICT(user_id, date) DO UPDATE SET
+       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+       ON CONFLICT(user_id, date, source) DO UPDATE SET
          steps = COALESCE(excluded.steps, daily_metrics.steps),
          sleep_seconds = COALESCE(excluded.sleep_seconds, daily_metrics.sleep_seconds),
          resting_hr = COALESCE(excluded.resting_hr, daily_metrics.resting_hr),
@@ -33,6 +33,7 @@ export class MetricsRepository {
       statement.bind(
         userId,
         metric.date,
+        source,
         metric.steps,
         metric.sleepSeconds,
         metric.restingHr,
@@ -49,20 +50,42 @@ export class MetricsRepository {
     await this.db.batch(batch);
   }
 
-  async listByRange(userId: string, from: string, to: string): Promise<DailyMetricRow[]> {
-    const result = await this.db
-      .prepare(
-        `SELECT * FROM daily_metrics
-         WHERE user_id = ? AND date >= ? AND date <= ?
-         ORDER BY date DESC`,
-      )
-      .bind(userId, from, to)
-      .all<DailyMetricRow>();
+  /** Filas del rango; si `source` se indica, solo esa fuente. */
+  async listByRange(
+    userId: string,
+    from: string,
+    to: string,
+    source?: string,
+  ): Promise<DailyMetricRow[]> {
+    const bySource = source
+      ? this.db
+          .prepare(
+            `SELECT * FROM daily_metrics
+             WHERE user_id = ? AND source = ? AND date >= ? AND date <= ?
+             ORDER BY date DESC`,
+          )
+          .bind(userId, source, from, to)
+      : this.db
+          .prepare(
+            `SELECT * FROM daily_metrics
+             WHERE user_id = ? AND date >= ? AND date <= ?
+             ORDER BY date DESC`,
+          )
+          .bind(userId, from, to);
 
+    const result = await bySource.all<DailyMetricRow>();
     return result.results ?? [];
   }
 
-  async latest(userId: string): Promise<DailyMetricRow | null> {
+  async latest(userId: string, source?: string): Promise<DailyMetricRow | null> {
+    if (source) {
+      return this.db
+        .prepare(
+          'SELECT * FROM daily_metrics WHERE user_id = ? AND source = ? ORDER BY date DESC LIMIT 1',
+        )
+        .bind(userId, source)
+        .first<DailyMetricRow>();
+    }
     return this.db
       .prepare('SELECT * FROM daily_metrics WHERE user_id = ? ORDER BY date DESC LIMIT 1')
       .bind(userId)

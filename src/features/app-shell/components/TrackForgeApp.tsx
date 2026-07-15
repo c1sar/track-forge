@@ -1,4 +1,4 @@
-import { ConnectGarminForm } from '@/features/garmin-connect/components/ConnectGarminForm';
+import { ConnectionsApp } from '@/features/connections/components/ConnectionsApp';
 import { DashboardApp } from '@/features/metrics/components/DashboardApp';
 import { DataApp } from '@/features/metrics/components/DataApp';
 import { SettingsApp } from '@/features/settings/components/SettingsApp';
@@ -14,11 +14,7 @@ interface TrackForgeAppProps {
 const PAGES: Record<AppPage, () => React.ReactNode> = {
   dashboard: () => <DashboardApp />,
   data: () => <DataApp />,
-  connect: () => (
-    <div className="mx-auto w-full max-w-md">
-      <ConnectGarminForm />
-    </div>
-  ),
+  connect: () => <ConnectionsApp />,
   settings: () => <SettingsApp />,
 };
 

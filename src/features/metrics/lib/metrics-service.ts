@@ -1,3 +1,4 @@
+import { PROVIDER_PRIORITY } from '@/features/connections/lib/registry';
 import { AppError } from '@/shared/lib/errors';
 import {
   addDaysIso,
@@ -8,7 +9,12 @@ import {
 } from '@/shared/lib/timezone';
 
 import { MetricsRepository } from './metrics-repository';
-import { type DailyMetric, rowToDailyMetric } from './types';
+import {
+  DAILY_METRIC_FIELDS,
+  type DailyMetric,
+  type DailyMetricRow,
+  rowToDailyMetric,
+} from './types';
 
 export interface MetricsRange {
   from: string;
@@ -66,16 +72,77 @@ export function defaultRange(tz: string): MetricsRange {
 
 export { addDaysIso };
 
+/** Posición de cada fuente en el orden de prioridad (desconocidas al final). */
+function sourceRank(source: string): number {
+  const index = PROVIDER_PRIORITY.indexOf(source as (typeof PROVIDER_PRIORITY)[number]);
+  return index === -1 ? PROVIDER_PRIORITY.length : index;
+}
+
+/**
+ * Fusiona las filas de varias fuentes en una métrica por día: campo a campo
+ * gana el primer valor no-null según `PROVIDER_PRIORITY`. Con una sola fuente
+ * es un mapeo directo. Esta vista unificada es la que consume el dashboard
+ * combinado y, a futuro, la capa de AI.
+ */
+function mergeRowsByDate(rows: DailyMetricRow[]): DailyMetric[] {
+  const byDate = new Map<string, DailyMetricRow[]>();
+  for (const row of rows) {
+    const group = byDate.get(row.date);
+    if (group) {
+      group.push(row);
+    } else {
+      byDate.set(row.date, [row]);
+    }
+  }
+
+  const merged: DailyMetric[] = [];
+  for (const [, group] of byDate) {
+    group.sort((a, b) => sourceRank(a.source) - sourceRank(b.source));
+    const metrics = group.map(rowToDailyMetric);
+    const base = metrics[0];
+    if (!base) {
+      continue;
+    }
+    for (const field of DAILY_METRIC_FIELDS) {
+      if (base[field] == null) {
+        base[field] = metrics.find((metric) => metric[field] != null)?.[field] ?? null;
+      }
+    }
+    merged.push(base);
+  }
+
+  // Mantiene el orden descendente por fecha del repositorio.
+  merged.sort((a, b) => b.date.localeCompare(a.date));
+  return merged;
+}
+
+/**
+ * Métricas del rango. Con `source` devuelve solo esa integración (dashboard
+ * por proveedor); sin `source`, la vista fusionada de todas las fuentes.
+ */
 export async function getMetrics(
   env: Env,
   userId: string,
   range: MetricsRange,
+  source?: string,
 ): Promise<DailyMetric[]> {
-  const rows = await new MetricsRepository(env.DB).listByRange(userId, range.from, range.to);
-  return rows.map(rowToDailyMetric);
+  const rows = await new MetricsRepository(env.DB).listByRange(
+    userId,
+    range.from,
+    range.to,
+    source,
+  );
+  if (source) {
+    return rows.map(rowToDailyMetric);
+  }
+  return mergeRowsByDate(rows);
 }
 
-export async function getLatestMetric(env: Env, userId: string): Promise<DailyMetric | null> {
-  const row = await new MetricsRepository(env.DB).latest(userId);
+export async function getLatestMetric(
+  env: Env,
+  userId: string,
+  source?: string,
+): Promise<DailyMetric | null> {
+  const row = await new MetricsRepository(env.DB).latest(userId, source);
   return row ? rowToDailyMetric(row) : null;
 }

@@ -1,0 +1,51 @@
+---
+description: How to add and structure data providers (Connections hub + backend contract)
+globs: src/features/connections/**,src/features/*-connect/**,src/features/sync/**
+alwaysApply: false
+---
+
+# Connections (multi-provider)
+
+Every health-data integration follows the same seams. Full guide with steps:
+`docs/integrations.md`. Garmin (`features/garmin-connect/`) is the reference
+implementation.
+
+## Key pieces
+
+- `connections/lib/provider.ts` — `HealthDataProvider` contract every provider
+  implements: `getConnection`, `disconnect`, `getDevice?`, `fetchDailyMetrics`.
+- `connections/lib/registry.ts` — domain registry (`id → implementation`) and
+  `PROVIDER_PRIORITY` (field-by-field merge order). Register new adapters here.
+- `connections/providers.ts` — UI registry (name, tagline, `Icon`, static
+  `accentClass`, capabilities). Future providers are NOT announced by brand;
+  the hub shows one generic `ComingSoonCard`.
+- `connections/lib/connections-service.ts` — generic status/device/disconnect,
+  served by `/api/connections/[provider]/*` routes.
+- `connections/lib/linked-account-repository.ts` — `linked_accounts` table
+  (one row per user+provider). Never store tokens in D1.
+- `shared/lib/token-vault.ts` — encrypted secrets in KV under
+  `<provider>_tokens:<userId>`. Also intended for future BYOK AI keys.
+- `sync/lib/sync-service.ts` — provider-agnostic; persists metrics with
+  `source = provider.id` into `daily_metrics (user_id, date, source)`.
+
+## Adding a provider (summary)
+
+1. Extend `ProviderId` + add entry in `connections/providers.ts`.
+2. Implement link flow in `features/<provider>-connect/lib/` (tokens via
+   `saveProviderTokens`, account via `LinkedAccountRepository.upsert`).
+3. Write `<provider>-metrics-source.ts` returning `DailyMetric` (nullable
+   fields; never fail a whole day for one metric).
+4. Create `<provider>-provider.ts` implementing `HealthDataProvider`.
+5. Register it in `registry.ts` (`HEALTH_PROVIDERS` + `PROVIDER_PRIORITY`).
+6. Add `<Provider>ConnectionCard.tsx` + register in `AVAILABLE_CARDS`
+   (`ConnectionsApp.tsx`).
+
+## Conventions
+
+- `accentClass` must be a static Tailwind literal (scanner requirement).
+- Cards stay presentational; network/state-machine logic lives in hooks.
+- Invalidate `['garmin-status']`-style query keys plus `['metrics']` after
+  connect/disconnect/sync so dashboards refresh.
+- Metrics reads: `source` param = single integration; no `source` = merged
+  view (`mergeRowsByDate` in `metrics-service.ts`) — the future AI layer will
+  consume this merged read.

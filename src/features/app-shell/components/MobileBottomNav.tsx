@@ -7,7 +7,7 @@ import type { AppPage } from './AppShell';
 const NAV_ITEMS = [
   { id: 'dashboard' as const, label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { id: 'data' as const, label: 'Data', href: '/data', icon: Database },
-  { id: 'connect' as const, label: 'Link', href: '/connect', icon: Link2 },
+  { id: 'connect' as const, label: 'Links', href: '/connect', icon: Link2 },
   { id: 'settings' as const, label: 'Settings', href: '/settings', icon: Settings },
 ] as const;
 

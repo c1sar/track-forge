@@ -1,7 +1,7 @@
 import type { APIRoute } from 'astro';
 
 import { requireUser } from '@/features/auth/lib/guard';
-import { disconnectGarmin } from '@/features/garmin-connect/lib/connect-service';
+import { disconnectProvider } from '@/features/connections/lib/connections-service';
 import { getEnv } from '@/shared/lib/env';
 import { jsonOk, toErrorResponse } from '@/shared/lib/errors';
 
@@ -11,7 +11,7 @@ export const POST: APIRoute = async (context) => {
   try {
     const user = requireUser(context);
     const env = getEnv();
-    await disconnectGarmin(env, user.id);
+    await disconnectProvider(env, user.id, context.params.provider ?? '');
     return jsonOk({});
   } catch (error) {
     return toErrorResponse(error);

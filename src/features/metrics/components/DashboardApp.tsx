@@ -1,11 +1,11 @@
 import { ArrowRight, Loader2, RefreshCw } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { usePublishSyncScope } from '@/features/app-shell/components/sync-scope';
+import { useGarminDevice } from '@/features/connections/hooks/use-garmin-device';
+import { useGarminStatus } from '@/features/connections/hooks/use-garmin-status';
 import { useDateRange } from '@/features/metrics/hooks/use-date-range';
 import { useDayMetric } from '@/features/metrics/hooks/use-day-metric';
 import { useEffectiveTimeZone } from '@/features/metrics/hooks/use-effective-timezone';
-import { useGarminDevice } from '@/features/metrics/hooks/use-garmin-device';
-import { useGarminStatus } from '@/features/metrics/hooks/use-garmin-status';
 import { useMetrics } from '@/features/metrics/hooks/use-metrics-query';
 import { useSyncMetrics } from '@/features/metrics/hooks/use-sync-metrics';
 import type { DailyMetric } from '@/features/metrics/lib/types';

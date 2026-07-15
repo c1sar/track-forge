@@ -1,12 +1,20 @@
-import { decryptJson, encryptJson } from '@/shared/lib/crypto';
-import { requireSecret } from '@/shared/lib/env';
+import {
+  deleteProviderTokens,
+  loadProviderTokens,
+  providerTokenKey,
+  saveProviderTokens,
+} from '@/shared/lib/token-vault';
 
 import type { GarminAuthTokens } from './sso';
 
-// Tokens OAuth cifrados con AES-GCM en KV, uno por usuario.
+// Fachada tipada sobre la bóveda genérica (`shared/lib/token-vault`) para los
+// tokens OAuth de Garmin. La clave KV resultante (`garmin_tokens:<userId>`) es
+// idéntica al esquema histórico: no requiere migración.
+
+const PROVIDER = 'garmin';
 
 export function tokenKvKey(userId: string): string {
-  return `garmin_tokens:${userId}`;
+  return providerTokenKey(PROVIDER, userId);
 }
 
 export async function saveTokens(
@@ -14,19 +22,13 @@ export async function saveTokens(
   userId: string,
   tokens: GarminAuthTokens,
 ): Promise<void> {
-  const key = requireSecret(env, 'TOKEN_ENCRYPTION_KEY');
-  await env.APP_KV.put(tokenKvKey(userId), await encryptJson(tokens, key));
+  await saveProviderTokens(env, PROVIDER, userId, tokens);
 }
 
 export async function loadTokens(env: Env, userId: string): Promise<GarminAuthTokens | null> {
-  const raw = await env.APP_KV.get(tokenKvKey(userId));
-  if (!raw) {
-    return null;
-  }
-  const key = requireSecret(env, 'TOKEN_ENCRYPTION_KEY');
-  return decryptJson<GarminAuthTokens>(raw, key);
+  return loadProviderTokens<GarminAuthTokens>(env, PROVIDER, userId);
 }
 
 export async function deleteTokens(env: Env, userId: string): Promise<void> {
-  await env.APP_KV.delete(tokenKvKey(userId));
+  await deleteProviderTokens(env, PROVIDER, userId);
 }

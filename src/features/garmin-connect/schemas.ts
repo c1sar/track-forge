@@ -20,17 +20,3 @@ export const mfaRequestSchema = z.object({
 
 export type ConnectRequest = z.infer<typeof connectRequestSchema>;
 export type MfaRequest = z.infer<typeof mfaRequestSchema>;
-
-export interface ConnectionStatus {
-  connected: boolean;
-  displayName: string | null;
-  lastSyncAt: string | null;
-  /** Zona horaria IANA guardada por el usuario (override). `null` => usar la del navegador. */
-  timezone: string | null;
-}
-
-/** Ultima subida del reloj/dispositivo a Garmin Connect (Bluetooth/WiFi). */
-export interface DeviceLastSync {
-  deviceName: string | null;
-  lastUploadAt: string | null;
-}

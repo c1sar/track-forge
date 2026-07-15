@@ -1,9 +1,9 @@
 import { Download, Loader2, RefreshCw } from 'lucide-react';
 
 import { usePublishSyncScope } from '@/features/app-shell/components/sync-scope';
+import { useGarminStatus } from '@/features/connections/hooks/use-garmin-status';
 import { useDateRange } from '@/features/metrics/hooks/use-date-range';
 import { useEffectiveTimeZone } from '@/features/metrics/hooks/use-effective-timezone';
-import { useGarminStatus } from '@/features/metrics/hooks/use-garmin-status';
 import { useMetrics } from '@/features/metrics/hooks/use-metrics-query';
 import { useSyncMetrics } from '@/features/metrics/hooks/use-sync-metrics';
 import { todayInTz } from '@/shared/lib/timezone';

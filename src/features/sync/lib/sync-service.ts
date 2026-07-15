@@ -1,9 +1,8 @@
 import { UserRepository } from '@/features/auth/lib/user-repository';
-import { ConnectApiClient } from '@/features/garmin-connect/lib/connect-api-client';
-import { GarminAccountRepository } from '@/features/garmin-connect/lib/garmin-account-repository';
-import { GarminError } from '@/features/garmin-connect/lib/types';
+import { LinkedAccountRepository } from '@/features/connections/lib/linked-account-repository';
+import { getProviderOrThrow } from '@/features/connections/lib/registry';
 import { MetricsRepository } from '@/features/metrics/lib/metrics-repository';
-import type { DailyMetric } from '@/features/metrics/lib/types';
+import { DAILY_METRIC_FIELDS, type DailyMetric } from '@/features/metrics/lib/types';
 import {
   addDaysIso,
   daysBetweenIso,
@@ -13,10 +12,9 @@ import {
   todayInTz,
 } from '@/shared/lib/timezone';
 
-import { fetchDayMetrics } from './garmin-metrics-source';
-
 export const DEFAULT_SYNC_DAYS = 7;
 export const MAX_SYNC_DAYS = 90;
+export const DEFAULT_PROVIDER = 'garmin';
 
 /** Cuantas metricas no-null se obtuvieron para un dia (de 9 posibles). */
 export interface SyncDayReport {
@@ -34,6 +32,8 @@ export interface SyncResult {
 }
 
 export interface SyncOptions {
+  /** Proveedor a sincronizar (id del registry). Default: garmin. */
+  provider?: string | null;
   /** Rango explicito (dias calendario locales del usuario). */
   from?: string | null;
   to?: string | null;
@@ -43,21 +43,8 @@ export interface SyncOptions {
   clientTz?: string | null;
 }
 
-/** Numero de campos metricos por dia (excluye `date`). */
-const METRIC_FIELDS: Array<keyof DailyMetric> = [
-  'steps',
-  'sleepSeconds',
-  'restingHr',
-  'avgStress',
-  'bodyBatteryLow',
-  'bodyBatteryHigh',
-  'hrvWeeklyAvg',
-  'spo2Avg',
-  'activeCalories',
-];
-
 function countFilled(metric: DailyMetric): number {
-  return METRIC_FIELDS.reduce((acc, field) => (metric[field] != null ? acc + 1 : acc), 0);
+  return DAILY_METRIC_FIELDS.reduce((acc, field) => (metric[field] != null ? acc + 1 : acc), 0);
 }
 
 /** Resuelve la lista de dias a sincronizar, acotada y TZ-aware. */
@@ -95,41 +82,35 @@ function resolveSyncDates(options: SyncOptions, tz: string): string[] {
 }
 
 /**
- * Sincroniza las metricas wellness de un usuario para un rango (o los ultimos
- * N dias). Es la unidad reutilizable llamada por el endpoint on-demand y por
- * el flujo de conexion (ver docs/sync-flow.md).
+ * Sincroniza las metricas diarias de un usuario para un proveedor y un rango
+ * (o los ultimos N dias). Es provider-agnostico: resuelve la integracion via
+ * el registry (`HealthDataProvider`) y persiste con `source = provider`.
+ * Unidad reutilizable llamada por el endpoint on-demand y por el link flow.
  */
 export async function syncUserMetrics(
   env: Env,
   userId: string,
   options: SyncOptions = {},
 ): Promise<SyncResult> {
-  const client = await ConnectApiClient.forUser(env, userId);
-  if (!client) {
-    throw new GarminError({
-      phase: 'login',
-      message: 'No hay una cuenta de Garmin vinculada. Conéctala primero.',
-      statusCode: 409,
-    });
-  }
+  const provider = getProviderOrThrow(options.provider ?? DEFAULT_PROVIDER);
 
   const storedTz = await new UserRepository(env.DB).getTimezone(userId);
   const tz = resolveServerTimeZone(storedTz, options.clientTz);
   const dates = resolveSyncDates(options, tz);
-  const displayName = await client.getDisplayName();
 
-  const metrics: DailyMetric[] = [];
-  for (const date of dates) {
-    metrics.push(await fetchDayMetrics(client, displayName, date));
-  }
+  const metrics = await provider.fetchDailyMetrics(env, userId, dates);
 
-  await new MetricsRepository(env.DB).upsertMany(userId, metrics);
-  await new GarminAccountRepository(env.DB).updateLastSync(userId, new Date().toISOString());
+  await new MetricsRepository(env.DB).upsertMany(userId, provider.id, metrics);
+  await new LinkedAccountRepository(env.DB).updateLastSync(
+    userId,
+    provider.id,
+    new Date().toISOString(),
+  );
 
   const report: SyncDayReport[] = metrics.map((metric) => ({
     date: metric.date,
     filled: countFilled(metric),
-    total: METRIC_FIELDS.length,
+    total: DAILY_METRIC_FIELDS.length,
   }));
 
   return {

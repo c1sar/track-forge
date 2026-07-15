@@ -12,10 +12,25 @@ export interface DailyMetric {
   activeCalories: number | null;
 }
 
-/** Fila tal cual se almacena en D1 (snake_case). */
+/** Campos métricos de un día (excluye `date`). Fuente única para sync y merge. */
+export const DAILY_METRIC_FIELDS: ReadonlyArray<Exclude<keyof DailyMetric, 'date'>> = [
+  'steps',
+  'sleepSeconds',
+  'restingHr',
+  'avgStress',
+  'bodyBatteryLow',
+  'bodyBatteryHigh',
+  'hrvWeeklyAvg',
+  'spo2Avg',
+  'activeCalories',
+];
+
+/** Fila tal cual se almacena en D1 (snake_case). Una por usuario+día+fuente. */
 export interface DailyMetricRow {
   user_id: string;
   date: string;
+  /** Proveedor de origen del dato (id del registry, p.ej. 'garmin'). */
+  source: string;
   steps: number | null;
   sleep_seconds: number | null;
   resting_hr: number | null;

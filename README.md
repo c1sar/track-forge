@@ -7,6 +7,7 @@ Construido sobre el flujo SSO móvil de Garmin (estilo [garth](https://github.co
 ## Características
 
 - **Cuentas propias** con email + contraseña (multiusuario).
+- **Hub de conexiones extensible**: página `Connections` con estado de vinculación en vivo (cuenta, dispositivo, última sync), conectar/desconectar, y backend multi-proveedor (contrato `HealthDataProvider` + registry) listo para futuras integraciones — ver [docs/integrations.md](docs/integrations.md).
 - **Vinculación de Garmin Connect** con soporte de MFA (email o app authenticator).
 - **Sincronización** de métricas wellness: pasos, sueño, FC en reposo, estrés, Body Battery, HRV, SpO2 y calorías activas.
 - **Dashboard** con tarjetas del día, gráficos de tendencia y tabla de detalle diario.
@@ -34,13 +35,14 @@ Browser (React islands)
   ▼
 Astro SSR (Cloudflare Worker)
   ├── features/auth            → registro, login, sesiones
-  ├── features/garmin-connect  → SSO + MFA + tokens cifrados
-  ├── features/sync            → fetch de métricas wellness
-  ├── features/metrics         → lectura/consulta + dashboard
+  ├── features/connections     → hub multi-proveedor (UI + contrato HealthDataProvider)
+  ├── features/garmin-connect  → integración Garmin (SSO + MFA + adapter)
+  ├── features/sync            → sync provider-agnóstico de métricas wellness
+  ├── features/metrics         → lectura por fuente o fusionada + dashboard
   └── features/export          → CSV AI-friendly
        │
-       ├── D1  (users, garmin_accounts, daily_metrics)
-       └── KV  (sessions, mfa:pending, garmin_tokens cifrados)
+       ├── D1  (users, linked_accounts, daily_metrics con source)
+       └── KV  (sessions, mfa:pending, tokens cifrados por proveedor)
 ```
 
 Detalle completo en [docs/architecture.md](docs/architecture.md).
@@ -95,6 +97,7 @@ El workflow [.github/workflows/deploy.yml](.github/workflows/deploy.yml) desplie
 | Documento | Contenido |
 |-----------|-----------|
 | [docs/architecture.md](docs/architecture.md) | Feature folders, bindings, flujo de datos |
+| [docs/integrations.md](docs/integrations.md) | Cómo añadir un proveedor + visión futura (AI/BYOK) |
 | [docs/sync-flow.md](docs/sync-flow.md) | Login SSO, MFA, OAuth y sincronización |
 | [docs/security.md](docs/security.md) | Modelo de amenazas y qué se guarda (y qué no) |
 | [docs/deployment.md](docs/deployment.md) | Provisión de D1/KV, secretos y deploy |

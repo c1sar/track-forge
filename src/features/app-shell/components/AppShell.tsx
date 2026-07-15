@@ -45,21 +45,21 @@ interface AppShellProps {
 const NAV_ITEMS = [
   { id: 'dashboard', label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { id: 'data', label: 'Data & Export', href: '/data', icon: Database },
-  { id: 'connect', label: 'Garmin Link', href: '/connect', icon: Link2 },
+  { id: 'connect', label: 'Connections', href: '/connect', icon: Link2 },
   { id: 'settings', label: 'Settings', href: '/settings', icon: Settings },
 ] as const;
 
 const PAGE_TITLES: Record<AppPage, string> = {
   dashboard: 'Performance Dashboard',
   data: 'Data & Export',
-  connect: 'Garmin Connect',
+  connect: 'Connections',
   settings: 'Settings',
 };
 
 const PAGE_TITLES_SHORT: Record<AppPage, string> = {
   dashboard: 'Dashboard',
   data: 'Data',
-  connect: 'Garmin',
+  connect: 'Connections',
   settings: 'Settings',
 };
 

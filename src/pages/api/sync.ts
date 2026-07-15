@@ -2,6 +2,7 @@ import type { APIRoute } from 'astro';
 import { z } from 'zod';
 
 import { requireUser } from '@/features/auth/lib/guard';
+import { isProviderId } from '@/features/connections/lib/registry';
 import { MAX_SYNC_DAYS, syncUserMetrics } from '@/features/sync/lib/sync-service';
 import { getEnv } from '@/shared/lib/env';
 import { jsonError, jsonOk, toErrorResponse } from '@/shared/lib/errors';
@@ -15,6 +16,10 @@ const isoDate = z
 
 const syncBodySchema = z
   .object({
+    provider: z
+      .string()
+      .refine((value) => isProviderId(value), { message: 'Proveedor no soportado.' })
+      .optional(),
     from: isoDate.optional(),
     to: isoDate.optional(),
     days: z.number().int().min(1).max(MAX_SYNC_DAYS).optional(),
@@ -57,6 +62,7 @@ export const POST: APIRoute = async (context) => {
     const days = body.days ?? (Number.isFinite(daysParam) && daysParam > 0 ? daysParam : undefined);
 
     const result = await syncUserMetrics(env, user.id, {
+      provider: body.provider,
       from: body.from,
       to: body.to,
       days,

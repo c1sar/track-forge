@@ -1,14 +1,14 @@
 import { useQuery } from '@tanstack/react-query';
 
-import type { DeviceLastSync } from '@/features/garmin-connect/schemas';
+import type { ProviderDevice } from '@/features/connections/lib/provider';
 
 export interface DeviceStatusResponse {
   ok: boolean;
-  device: DeviceLastSync;
+  device: ProviderDevice;
 }
 
 async function fetchDeviceStatus(): Promise<DeviceStatusResponse> {
-  const response = await fetch('/api/garmin/device-status');
+  const response = await fetch('/api/connections/garmin/device-status');
   return (await response.json()) as DeviceStatusResponse;
 }
 
