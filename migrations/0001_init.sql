@@ -1,4 +1,4 @@
--- Garmin Cloud initial schema
+-- Track Forge initial schema
 -- Multi-user: cada usuario de la app puede vincular una cuenta Garmin.
 
 CREATE TABLE IF NOT EXISTS users (

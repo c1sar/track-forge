@@ -1,18 +1,20 @@
-# Garmin Cloud
+# Track Forge
 
-Dashboard multiusuario, open source y self-hostable para sincronizar tus métricas de **Garmin Connect** en **Cloudflare Workers**, visualizarlas y exportarlas a CSV listo para un asistente de IA.
+**Centro de datos y análisis** multiusuario, open source y self-hostable para **monitorear, visualizar y analizar tus métricas** de salud y rendimiento — y llevar tu rendimiento al siguiente nivel.
 
-Construido sobre el flujo SSO móvil de Garmin (estilo [garth](https://github.com/matin/garth)) con `fetch` nativo, sin dependencias no oficiales frágiles.
+Conecta tus aplicaciones y dispositivos (hoy **Garmin Connect**; mañana Apple Health, Fitbit, Oura, nutrición y más), centraliza todo en un solo dashboard, detecta tendencias y exporta a CSV listo para un asistente de IA.
+
+Construido sobre un **hub de conexiones extensible** (`HealthDataProvider` + registry) desplegado en **Cloudflare Workers**. La integración Garmin usa el flujo SSO móvil (estilo [garth](https://github.com/matin/garth)) con `fetch` nativo, sin dependencias no oficiales frágiles.
 
 ## Características
 
 - **Cuentas propias** con email + contraseña (multiusuario).
-- **Hub de conexiones extensible**: página `Connections` con estado de vinculación en vivo (cuenta, dispositivo, última sync), conectar/desconectar, y backend multi-proveedor (contrato `HealthDataProvider` + registry) listo para futuras integraciones — ver [docs/integrations.md](docs/integrations.md).
-- **Vinculación de Garmin Connect** con soporte de MFA (email o app authenticator).
-- **Sincronización** de métricas wellness: pasos, sueño, FC en reposo, estrés, Body Battery, HRV, SpO2 y calorías activas.
-- **Dashboard** con tarjetas del día, gráficos de tendencia y tabla de detalle diario.
-- **Exportación CSV** optimizada para que un LLM interprete tus datos.
-- **Seguridad primero**: tokens cifrados (AES-GCM), contraseñas con PBKDF2, sesiones httpOnly, credenciales de Garmin nunca persistidas.
+- **Hub de conexiones extensible**: página `Connections` con estado de vinculación en vivo (cuenta, dispositivo, última sync), conectar/desconectar, y backend multi-proveedor listo para nuevas integraciones — ver [docs/integrations.md](docs/integrations.md).
+- **Garmin Connect** (primera integración disponible) con soporte de MFA (email o app authenticator).
+- **Sincronización unificada** de métricas wellness: pasos, sueño, FC en reposo, estrés, Body Battery, HRV, SpO2 y calorías activas — por fuente o vista fusionada entre proveedores.
+- **Dashboard de análisis** con tarjetas del día, gráficos de tendencia y tabla de detalle diario.
+- **Exportación CSV** optimizada para que un LLM interprete tus datos y te dé insights accionables.
+- **Seguridad primero**: tokens cifrados (AES-GCM), contraseñas con PBKDF2, sesiones httpOnly, credenciales de terceros nunca persistidas.
 
 ## Stack
 
@@ -31,7 +33,7 @@ Construido sobre el flujo SSO móvil de Garmin (estilo [garth](https://github.co
 
 ```
 Browser (React islands)
-  │  /login  /register  /connect  /dashboard
+  │  /login  /register  /connect  /dashboard  /data
   ▼
 Astro SSR (Cloudflare Worker)
   ├── features/auth            → registro, login, sesiones
@@ -52,7 +54,7 @@ Detalle completo en [docs/architecture.md](docs/architecture.md).
 - Node.js >= 22.12
 - pnpm >= 10
 - Cuenta de Cloudflare (para desplegar)
-- Cuenta de Garmin Connect
+- Al menos una cuenta en un proveedor soportado (hoy: Garmin Connect)
 
 ## Inicio rápido (local)
 
@@ -71,7 +73,7 @@ pnpm run db:migrate:local
 pnpm run preview:worker
 ```
 
-Abre [http://localhost:8787](http://localhost:8787), crea una cuenta, vincula tu Garmin y sincroniza.
+Abre [http://localhost:8787](http://localhost:8787), crea una cuenta, conecta tus aplicaciones en `Connections` y sincroniza.
 
 > Usa siempre `preview:worker` (`wrangler dev`). `astro dev` corre en Node y no reproduce el runtime de Workers ni los bindings D1/KV.
 
@@ -98,7 +100,7 @@ El workflow [.github/workflows/deploy.yml](.github/workflows/deploy.yml) desplie
 |-----------|-----------|
 | [docs/architecture.md](docs/architecture.md) | Feature folders, bindings, flujo de datos |
 | [docs/integrations.md](docs/integrations.md) | Cómo añadir un proveedor + visión futura (AI/BYOK) |
-| [docs/sync-flow.md](docs/sync-flow.md) | Login SSO, MFA, OAuth y sincronización |
+| [docs/sync-flow.md](docs/sync-flow.md) | Login SSO Garmin, MFA, OAuth y sincronización |
 | [docs/security.md](docs/security.md) | Modelo de amenazas y qué se guarda (y qué no) |
 | [docs/deployment.md](docs/deployment.md) | Provisión de D1/KV, secretos y deploy |
 | [docs/csv-export.md](docs/csv-export.md) | Formato CSV y prompt de ejemplo para IA |
@@ -107,7 +109,7 @@ El workflow [.github/workflows/deploy.yml](.github/workflows/deploy.yml) desplie
 
 ## Seguridad (resumen)
 
-- Las **credenciales de Garmin nunca se guardan**: solo se usan en memoria durante el login/MFA.
+- Las **credenciales de terceros nunca se guardan**: solo se usan en memoria durante el login/MFA de cada proveedor.
 - Los **tokens OAuth** se cifran con AES-256-GCM antes de guardarse en KV.
 - Las **contraseñas de la app** se hashean con PBKDF2-SHA256.
 - Las **sesiones** usan cookies httpOnly + Secure + SameSite=Strict.
@@ -116,7 +118,7 @@ Lee el modelo completo en [docs/security.md](docs/security.md).
 
 ## Aviso legal
 
-Este proyecto usa endpoints no oficiales de Garmin Connect. No está afiliado ni respaldado por Garmin. Úsalo bajo tu responsabilidad y respetando los términos de servicio de Garmin.
+La integración con Garmin Connect usa endpoints no oficiales. Track Forge no está afiliado ni respaldado por Garmin ni por ningún otro proveedor de datos. Úsalo bajo tu responsabilidad y respetando los términos de servicio de cada plataforma conectada.
 
 ## Licencia
 

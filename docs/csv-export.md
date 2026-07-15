@@ -1,13 +1,15 @@
 # Exportación CSV para IA
 
-El endpoint `GET /api/export/csv?from=YYYY-MM-DD&to=YYYY-MM-DD` (o el botón del dashboard) descarga tus métricas en un CSV diseñado para que un asistente de IA lo interprete sin ambigüedad.
+El endpoint `GET /api/export/csv?from=YYYY-MM-DD&to=YYYY-MM-DD&source?` (o el botón en la página **Data & Export**) descarga tus métricas en un CSV diseñado para que un asistente de IA lo interprete sin ambigüedad.
+
+Sin `source`, exporta la **vista fusionada** de todas las integraciones conectadas; con `source=<provider>` (p. ej. `garmin`), exporta solo esa fuente.
 
 ## Formato
 
 - Cabeceras en inglés `snake_case` (mejor tokenización para LLMs).
 - Una fila por día, orden ascendente por fecha.
 - Sin PII: no incluye email ni identificadores de usuario.
-- Valores vacíos (`` `` ``) cuando Garmin no tenía dato ese día.
+- Valores vacíos (`` `` ``) cuando ningún proveedor tenía dato ese día para esa métrica.
 
 ```csv
 date,steps,sleep_hours,sleep_minutes,resting_hr_avg,avg_stress,body_battery_low,body_battery_high,hrv_weekly_avg,spo2_avg,active_calories
@@ -30,7 +32,7 @@ date,steps,sleep_hours,sleep_minutes,resting_hr_avg,avg_stress,body_battery_low,
 
 ## Prompt de ejemplo para tu asistente
 
-> Adjunto un CSV con mis métricas diarias de Garmin (una fila por día). Analiza tendencias de las últimas semanas: correlaciona `avg_stress` y `hrv_weekly_avg` con `sleep_hours`, señala días atípicos en `resting_hr_avg`, y dame 3 recomendaciones accionables. Trata los valores vacíos como datos no disponibles, no como cero.
+> Adjunto un CSV con mis métricas diarias consolidadas de Track Forge (una fila por día, datos de mis wearables y apps conectadas). Analiza tendencias de las últimas semanas: correlaciona `avg_stress` y `hrv_weekly_avg` con `sleep_hours`, señala días atípicos en `resting_hr_avg`, y dame 3 recomendaciones accionables para mejorar mi rendimiento. Trata los valores vacíos como datos no disponibles, no como cero.
 
 ## Notas
 

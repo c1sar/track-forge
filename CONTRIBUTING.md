@@ -1,6 +1,6 @@
 # Contribuir
 
-Gracias por tu interés en mejorar Garmin Cloud.
+Gracias por tu interés en mejorar **Track Forge** — nuestro centro de datos y análisis para métricas de salud y rendimiento.
 
 ## Puesta en marcha
 

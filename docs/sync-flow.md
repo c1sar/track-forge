@@ -1,5 +1,7 @@
 # Flujo de sincronización
 
+Track Forge sincroniza métricas de forma **provider-agnóstica** vía `sync-service` (ver [architecture.md](architecture.md)). Esta guía detalla el flujo de la integración **Garmin Connect** — la primera disponible. Futuras integraciones seguirán el mismo patrón de adapter + link flow propio documentado en [integrations.md](integrations.md).
+
 ## 1. Login SSO de Garmin (con MFA)
 
 Garmin ya no permite scraping HTML del login. Usamos su **API móvil JSON** (el mismo flujo que la app y que [garth](https://github.com/matin/garth)), implementada con `fetch` nativo en [`features/garmin-connect/lib/sso.ts`](../src/features/garmin-connect/lib/sso.ts).

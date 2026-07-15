@@ -11,7 +11,7 @@ Incluye pasos de reproducción, impacto y, si es posible, una prueba de concepto
 
 ## Alcance
 
-Este proyecto maneja credenciales de terceros (Garmin) y datos personales de salud. Son especialmente relevantes:
+Track Forge maneja credenciales de terceros (Garmin y futuros proveedores) y datos personales de salud. Son especialmente relevantes:
 
 - Fugas de tokens OAuth o de la clave de cifrado.
 - Bypass de autenticación o de la separación entre usuarios.

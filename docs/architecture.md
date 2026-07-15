@@ -1,6 +1,8 @@
 # Arquitectura
 
-Garmin Cloud es una aplicación Astro SSR que corre íntegramente en un Cloudflare Worker. El frontend (islas React) y el backend (endpoints de API) viven en el mismo Worker; no hay servidor separado.
+**Track Forge** es un centro de datos y análisis implementado como aplicación Astro SSR que corre íntegramente en un Cloudflare Worker. El frontend (islas React) y el backend (endpoints de API) viven en el mismo Worker; no hay servidor separado.
+
+El diseño es **multi-proveedor**: cada integración (Garmin hoy; otras aplicaciones mañana) implementa el contrato `HealthDataProvider`, sincroniza métricas con `source` identificable y las lecturas pueden ser por fuente o fusionadas para análisis unificado.
 
 ## Organización del código (feature-oriented)
 

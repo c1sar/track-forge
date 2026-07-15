@@ -1,6 +1,6 @@
 # Integraciones: cómo añadir un proveedor
 
-TrackForge está diseñado como **métricas + integraciones + datos (+ AI a futuro)**. Toda integración de datos de salud (Garmin hoy; Apple Health, Fitbit, Oura, nutrición… mañana) pasa por las mismas costuras. Esta guía documenta el patrón y los pasos exactos.
+**Track Forge** es un centro de datos y análisis: **métricas + integraciones + visualización (+ AI a futuro)**. Toda integración de datos de salud y rendimiento (Garmin hoy; Apple Health, Fitbit, Oura, nutrición… mañana) pasa por las mismas costuras para que puedas monitorear, comparar y analizar todo desde un solo lugar. Esta guía documenta el patrón y los pasos exactos.
 
 ## El patrón en una imagen
 

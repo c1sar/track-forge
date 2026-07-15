@@ -1,13 +1,13 @@
 # Modelo de seguridad
 
-Este proyecto maneja credenciales de terceros y datos de salud personales. El diseño prioriza minimizar qué se guarda y cifrar lo sensible.
+Track Forge maneja credenciales de terceros (Garmin hoy; más proveedores mañana) y datos de salud personales. El diseño prioriza minimizar qué se guarda y cifrar lo sensible, con el mismo patrón para cada integración.
 
 ## Qué se guarda y qué no
 
 | Dato | Dónde | Cómo |
 |------|-------|------|
-| Contraseña de Garmin | En ningún sitio | Solo en memoria durante el request de login/MFA |
-| Tokens OAuth de Garmin | KV (`garmin_tokens:{userId}`) | Cifrados con AES-256-GCM |
+| Credenciales de proveedores (p. ej. Garmin) | En ningún sitio | Solo en memoria durante el request de login/MFA |
+| Tokens OAuth por proveedor | KV (`<provider>_tokens:{userId}`) | Cifrados con AES-256-GCM |
 | Estado MFA pendiente | KV (`mfa:pending:{id}`) | JSON con TTL 5 min, atado al `userId` |
 | Contraseña de la app | D1 (`users.password_hash`) | Hash PBKDF2-SHA256 (100k iteraciones) |
 | Sesión | KV (`session:{id}`) | Id aleatorio de 32 bytes, TTL 7 días |
@@ -18,8 +18,8 @@ Este proyecto maneja credenciales de terceros y datos de salud personales. El di
 ### Contraseñas de la app
 PBKDF2-SHA256, 100 000 iteraciones, salt de 16 bytes aleatorio por usuario. Formato `pbkdf2$iter$salt$hash`. Verificación en tiempo constante ([`shared/lib/encoding.ts`](../src/shared/lib/encoding.ts) `timingSafeEqual`). Implementación en [`features/auth/lib/password.ts`](../src/features/auth/lib/password.ts).
 
-### Tokens de Garmin
-Cifrado simétrico AES-256-GCM con IV aleatorio de 12 bytes antepuesto al ciphertext ([`shared/lib/crypto.ts`](../src/shared/lib/crypto.ts)). La clave (`TOKEN_ENCRYPTION_KEY`, 32 bytes base64) es un secreto del Worker, nunca en el repo. Rotarla invalida todos los tokens guardados.
+### Tokens de proveedores
+Cifrado simétrico AES-256-GCM con IV aleatorio de 12 bytes antepuesto al ciphertext ([`shared/lib/crypto.ts`](../src/shared/lib/crypto.ts)). La clave (`TOKEN_ENCRYPTION_KEY`, 32 bytes base64) es un secreto del Worker, nunca en el repo. Rotarla invalida todos los tokens guardados de todas las integraciones.
 
 ### Sesiones
 Cookie `gc_session`: `HttpOnly`, `Secure`, `SameSite=Strict`, `Path=/`, `Max-Age=7d`. El valor es un id opaco; los datos de sesión viven en KV. Logout borra la entrada de KV y la cookie.
@@ -49,4 +49,4 @@ No se registran contraseñas ni tokens. `observability` de Cloudflare está acti
 
 - Añadir rate limiting (KV counters o Cloudflare Rate Limiting) en `/api/auth/*` y `/api/garmin/connect`.
 - Servir siempre sobre HTTPS (Cloudflare lo hace por defecto).
-- Revisar los términos de servicio de Garmin antes de desplegar públicamente.
+- Revisar los términos de servicio de cada proveedor conectado antes de desplegar públicamente.

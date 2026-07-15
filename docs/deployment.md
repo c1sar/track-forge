@@ -1,5 +1,7 @@
 # Despliegue en Cloudflare
 
+Guía para desplegar **Track Forge** en Cloudflare Workers. Los nombres de recursos en `wrangler.jsonc` (p. ej. `garmin-cloud`) son identificadores internos del proyecto; no afectan al branding ni a la experiencia de usuario.
+
 ## Requisitos previos
 
 - Cuenta de Cloudflare y `wrangler` autenticado (`pnpm exec wrangler login`).
@@ -68,8 +70,8 @@ Esto ejecuta `astro build` y `wrangler deploy`. El adaptador genera la configura
 ## Verificación post-deploy
 
 1. Regístrate en `/register`.
-2. Vincula Garmin en `/connect` (introduce el código MFA si se solicita).
-3. Comprueba el dashboard y descarga un CSV.
+2. Conecta tus aplicaciones en `/connect` (Garmin disponible hoy; introduce el código MFA si se solicita).
+3. Comprueba el dashboard, explora tendencias y descarga un CSV desde `/data`.
 
 ## Despliegue con GitHub Actions (CI/CD)
 
