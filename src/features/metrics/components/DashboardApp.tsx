@@ -4,10 +4,12 @@ import { usePublishSyncScope } from '@/features/app-shell/components/sync-scope'
 import { useDateRange } from '@/features/metrics/hooks/use-date-range';
 import { useDayMetric } from '@/features/metrics/hooks/use-day-metric';
 import { useEffectiveTimeZone } from '@/features/metrics/hooks/use-effective-timezone';
+import { useGarminDevice } from '@/features/metrics/hooks/use-garmin-device';
 import { useGarminStatus } from '@/features/metrics/hooks/use-garmin-status';
 import { useMetrics } from '@/features/metrics/hooks/use-metrics-query';
 import { useSyncMetrics } from '@/features/metrics/hooks/use-sync-metrics';
 import type { DailyMetric } from '@/features/metrics/lib/types';
+import { formatRelativeTime, isWatchUploadStale } from '@/shared/lib/dates';
 import { todayInTz } from '@/shared/lib/timezone';
 import { Alert, AlertDescription, AlertTitle } from '@/shared/ui/alert';
 import { Button, buttonVariants } from '@/shared/ui/button';
@@ -37,6 +39,7 @@ export function DashboardApp() {
 
   const statusQuery = useGarminStatus();
   const connected = statusQuery.data?.connection.connected === true;
+  const deviceQuery = useGarminDevice(connected);
 
   const [selectedDay, setSelectedDay] = useState(today);
   // Si "hoy" cambia (nueva TZ o cruce de medianoche) y seguiamos en el dia
@@ -80,6 +83,8 @@ export function DashboardApp() {
   const dayHasData = dayMetric != null;
   const metrics = metricsQuery.data?.metrics ?? [];
   const connection = statusQuery.data?.connection;
+  const device = deviceQuery.data?.device;
+  const watchUploadStale = isWatchUploadStale(device?.lastUploadAt ?? null, tz);
   const refreshing = metricsQuery.isFetching && !metricsQuery.isLoading;
 
   return (
@@ -96,6 +101,24 @@ export function DashboardApp() {
                   ? new Date(connection.lastSyncAt).toLocaleString('en-US')
                   : 'never'}
               </p>
+              <p
+                className={`font-mono text-xs tabular-nums ${
+                  watchUploadStale ? 'text-amber-500' : 'text-muted-foreground'
+                }`}
+              >
+                Watch → Connect:{' '}
+                {deviceQuery.isLoading
+                  ? 'checking…'
+                  : device?.lastUploadAt
+                    ? formatRelativeTime(device.lastUploadAt)
+                    : 'unknown'}
+                {device?.deviceName ? ` (${device.deviceName})` : ''}
+              </p>
+              {watchUploadStale ? (
+                <p className="text-xs text-amber-500/90">
+                  Sync your watch in Garmin Connect Mobile first, then sync here.
+                </p>
+              ) : null}
             </div>
             <div className="flex items-center gap-2">
               <DayPicker value={selectedDay} onChange={setSelectedDay} maxDateIso={today} />

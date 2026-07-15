@@ -1,6 +1,6 @@
 import { UserRepository } from '@/features/auth/lib/user-repository';
 
-import type { ConnectionStatus } from '../schemas';
+import type { ConnectionStatus, DeviceLastSync } from '../schemas';
 import { ConnectApiClient } from './connect-api-client';
 import { GarminAccountRepository } from './garmin-account-repository';
 import { consumeMfaState, storeMfaState } from './mfa-store';
@@ -91,4 +91,49 @@ export async function getConnectionStatus(env: Env, userId: string): Promise<Con
 export async function disconnectGarmin(env: Env, userId: string): Promise<void> {
   await deleteTokens(env, userId);
   await new GarminAccountRepository(env.DB).delete(userId);
+}
+
+interface LastUsedResponse {
+  lastUsedDeviceName?: string | null;
+  lastUsedDeviceUploadTime?: number | { gmt?: number | null } | null;
+}
+
+const EMPTY_DEVICE_SYNC: DeviceLastSync = { deviceName: null, lastUploadAt: null };
+
+/** Parsea timestamps de Garmin (epoch ms o objeto con campo gmt). */
+function parseGarminUploadTime(value: unknown): string | null {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return new Date(value).toISOString();
+  }
+  if (value && typeof value === 'object' && 'gmt' in value) {
+    const gmt = (value as { gmt?: number | null }).gmt;
+    if (typeof gmt === 'number' && Number.isFinite(gmt)) {
+      return new Date(gmt).toISOString();
+    }
+  }
+  return null;
+}
+
+/**
+ * Consulta cuando el reloj/dispositivo subio datos a Garmin Connect por ultima vez.
+ * Tolerante a fallos: nunca lanza; devuelve nulls si no hay datos o la API falla.
+ */
+export async function getDeviceLastSync(env: Env, userId: string): Promise<DeviceLastSync> {
+  try {
+    const client = await ConnectApiClient.forUser(env, userId);
+    if (!client) {
+      return EMPTY_DEVICE_SYNC;
+    }
+
+    const data = await client.get<LastUsedResponse>('/device-service/deviceservice/mylastused');
+    const deviceName =
+      typeof data.lastUsedDeviceName === 'string' && data.lastUsedDeviceName.length > 0
+        ? data.lastUsedDeviceName
+        : null;
+    const lastUploadAt = parseGarminUploadTime(data.lastUsedDeviceUploadTime);
+
+    return { deviceName, lastUploadAt };
+  } catch {
+    return EMPTY_DEVICE_SYNC;
+  }
 }

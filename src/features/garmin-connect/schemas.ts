@@ -28,3 +28,9 @@ export interface ConnectionStatus {
   /** Zona horaria IANA guardada por el usuario (override). `null` => usar la del navegador. */
   timezone: string | null;
 }
+
+/** Ultima subida del reloj/dispositivo a Garmin Connect (Bluetooth/WiFi). */
+export interface DeviceLastSync {
+  deviceName: string | null;
+  lastUploadAt: string | null;
+}

@@ -56,6 +56,7 @@ export function useSyncMetrics() {
     onSuccess: (body) => {
       queryClient.invalidateQueries({ queryKey: ['metrics'] });
       queryClient.invalidateQueries({ queryKey: ['garmin-status'] });
+      queryClient.invalidateQueries({ queryKey: ['garmin-device'] });
       const result = body.result;
       toast.success('Sync complete', {
         id: SYNC_TOAST_ID,
