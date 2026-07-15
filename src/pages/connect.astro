@@ -1,10 +1,18 @@
 ---
-import { ConnectGarminForm } from '@/features/garmin-connect/components/ConnectGarminForm';
+import { TrackForgeApp } from '@/features/app-shell/components/TrackForgeApp';
 import Layout from '@/layouts/Layout.astro';
+
+const currentUser = Astro.locals.currentUser;
+if (!currentUser) {
+  return Astro.redirect('/login');
+}
 ---
 
-<Layout title="Vincular Garmin · Garmin Cloud">
-  <div class="flex min-h-[70vh] items-center justify-center">
-    <ConnectGarminForm client:load />
-  </div>
+<Layout title="Garmin Link · TrackForge" bare>
+  <TrackForgeApp
+    userEmail={currentUser.email}
+    currentPage="connect"
+    client:load
+    transition:persist="trackforge-shell"
+  />
 </Layout>

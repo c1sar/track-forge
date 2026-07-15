@@ -23,7 +23,9 @@ export const POST: APIRoute = async (context) => {
 
     // Sincronización inicial en segundo plano tras vincular la cuenta.
     const executionCtx = getExecutionContext(context);
-    const syncPromise = syncUserMetrics(env, user.id, INITIAL_SYNC_DAYS).catch(() => undefined);
+    const syncPromise = syncUserMetrics(env, user.id, { days: INITIAL_SYNC_DAYS }).catch(
+      () => undefined,
+    );
     if (executionCtx) {
       executionCtx.waitUntil(syncPromise);
     }

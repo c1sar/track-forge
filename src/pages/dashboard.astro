@@ -1,8 +1,18 @@
 ---
-import { DashboardApp } from '@/features/metrics/components/DashboardApp';
+import { TrackForgeApp } from '@/features/app-shell/components/TrackForgeApp';
 import Layout from '@/layouts/Layout.astro';
+
+const currentUser = Astro.locals.currentUser;
+if (!currentUser) {
+  return Astro.redirect('/login');
+}
 ---
 
-<Layout title="Panel · Garmin Cloud">
-  <DashboardApp client:load />
+<Layout title="Dashboard · TrackForge" bare>
+  <TrackForgeApp
+    userEmail={currentUser.email}
+    currentPage="dashboard"
+    client:load
+    transition:persist="trackforge-shell"
+  />
 </Layout>

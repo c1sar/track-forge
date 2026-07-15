@@ -21,6 +21,20 @@ pnpm exec astro check   # tipos
 pnpm run build          # build de producción
 ```
 
+### Hook de pre-commit
+
+Al ejecutar `pnpm install` se configura automáticamente un hook de git
+(`core.hooksPath` apunta a `.githooks/`) que corre Biome **solo sobre los
+archivos en stage** antes de cada commit, aplica los arreglos seguros y
+los vuelve a añadir al stage. Si quedan errores que no se pueden arreglar
+automáticamente, el commit se aborta.
+
+No requiere dependencias extra. Si necesitas activarlo manualmente:
+
+```bash
+git config core.hooksPath .githooks
+```
+
 ## Convenciones
 
 - **Organización feature-oriented**: el código nuevo va en `src/features/<feature>/` (`api/`, `components/`, `lib/`, `schemas.ts`). Lo transversal en `src/shared/`.

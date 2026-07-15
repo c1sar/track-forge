@@ -21,7 +21,9 @@ export const POST: APIRoute = async (context) => {
     const result = await resumeGarminConnection(env, user.id, mfaSessionId, mfaCode);
 
     const executionCtx = getExecutionContext(context);
-    const syncPromise = syncUserMetrics(env, user.id, INITIAL_SYNC_DAYS).catch(() => undefined);
+    const syncPromise = syncUserMetrics(env, user.id, { days: INITIAL_SYNC_DAYS }).catch(
+      () => undefined,
+    );
     if (executionCtx) {
       executionCtx.waitUntil(syncPromise);
     }

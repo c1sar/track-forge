@@ -25,4 +25,6 @@ export interface ConnectionStatus {
   connected: boolean;
   displayName: string | null;
   lastSyncAt: string | null;
+  /** Zona horaria IANA guardada por el usuario (override). `null` => usar la del navegador. */
+  timezone: string | null;
 }

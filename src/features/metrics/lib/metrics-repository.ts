@@ -17,15 +17,15 @@ export class MetricsRepository {
          active_calories, synced_at
        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
        ON CONFLICT(user_id, date) DO UPDATE SET
-         steps = excluded.steps,
-         sleep_seconds = excluded.sleep_seconds,
-         resting_hr = excluded.resting_hr,
-         avg_stress = excluded.avg_stress,
-         body_battery_low = excluded.body_battery_low,
-         body_battery_high = excluded.body_battery_high,
-         hrv_weekly_avg = excluded.hrv_weekly_avg,
-         spo2_avg = excluded.spo2_avg,
-         active_calories = excluded.active_calories,
+         steps = COALESCE(excluded.steps, daily_metrics.steps),
+         sleep_seconds = COALESCE(excluded.sleep_seconds, daily_metrics.sleep_seconds),
+         resting_hr = COALESCE(excluded.resting_hr, daily_metrics.resting_hr),
+         avg_stress = COALESCE(excluded.avg_stress, daily_metrics.avg_stress),
+         body_battery_low = COALESCE(excluded.body_battery_low, daily_metrics.body_battery_low),
+         body_battery_high = COALESCE(excluded.body_battery_high, daily_metrics.body_battery_high),
+         hrv_weekly_avg = COALESCE(excluded.hrv_weekly_avg, daily_metrics.hrv_weekly_avg),
+         spo2_avg = COALESCE(excluded.spo2_avg, daily_metrics.spo2_avg),
+         active_calories = COALESCE(excluded.active_calories, daily_metrics.active_calories),
          synced_at = excluded.synced_at`,
     );
 

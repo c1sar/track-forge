@@ -1,10 +1,12 @@
+'use client';
+
 import type * as React from 'react';
 
 import { cn } from '@/shared/lib/utils';
 
 function Label({ className, ...props }: React.ComponentProps<'label'>) {
   return (
-    // biome-ignore lint/a11y/noLabelWithoutControl: htmlFor is provided by callers
+    // biome-ignore lint/a11y/noLabelWithoutControl: this is a generic label primitive; the control is associated by callers via htmlFor or by nesting the control
     <label
       data-slot="label"
       className={cn(

@@ -1,3 +1,5 @@
+import { UserRepository } from '@/features/auth/lib/user-repository';
+
 import type { ConnectionStatus } from '../schemas';
 import { ConnectApiClient } from './connect-api-client';
 import { GarminAccountRepository } from './garmin-account-repository';
@@ -70,14 +72,19 @@ export async function resumeGarminConnection(
 }
 
 export async function getConnectionStatus(env: Env, userId: string): Promise<ConnectionStatus> {
-  const account = await new GarminAccountRepository(env.DB).findByUserId(userId);
+  const [account, timezone] = await Promise.all([
+    new GarminAccountRepository(env.DB).findByUserId(userId),
+    new UserRepository(env.DB).getTimezone(userId),
+  ]);
+
   if (!account) {
-    return { connected: false, displayName: null, lastSyncAt: null };
+    return { connected: false, displayName: null, lastSyncAt: null, timezone };
   }
   return {
     connected: true,
     displayName: account.display_name,
     lastSyncAt: account.last_sync_at,
+    timezone,
   };
 }
 

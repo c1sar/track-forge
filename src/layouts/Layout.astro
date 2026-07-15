@@ -1,49 +1,60 @@
 ---
+import { ClientRouter } from 'astro:transitions';
+
 import '@/styles/global.css';
 
 interface Props {
   title?: string;
+  bare?: boolean;
 }
 
-const { title = 'Garmin Cloud' } = Astro.props;
+const { title = 'TrackForge', bare = false } = Astro.props;
 const currentUser = Astro.locals.currentUser;
 ---
 
-<html lang="es">
+<html lang="es" class="dark">
   <head>
     <meta charset="utf-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="generator" content={Astro.generator} />
     <title>{title}</title>
+    <ClientRouter />
   </head>
   <body class="min-h-screen bg-background text-foreground antialiased">
-    <header class="border-b">
-      <div class="mx-auto flex h-14 max-w-6xl items-center justify-between px-4">
-        <a href="/" class="font-heading text-sm font-semibold">Garmin Cloud</a>
-        {
-          currentUser ? (
-            <div class="flex items-center gap-3 text-sm">
-              <span class="text-muted-foreground">{currentUser.email}</span>
-              <form method="post" action="/api/auth/logout" data-logout>
-                <button
-                  type="submit"
-                  class="rounded-md border px-2.5 py-1 text-sm hover:bg-muted"
-                >
-                  Salir
-                </button>
-              </form>
+    {
+      bare ? (
+        <slot />
+      ) : (
+        <>
+          <header class="border-b border-border">
+            <div class="mx-auto flex h-14 max-w-6xl items-center justify-between px-4">
+              <a href="/" class="font-heading text-sm font-semibold tracking-wide uppercase">
+                TrackForge
+              </a>
+              {currentUser ? (
+                <div class="flex items-center gap-3 text-sm">
+                  <span class="font-mono text-xs text-muted-foreground">{currentUser.email}</span>
+                  <form method="post" action="/api/auth/logout" data-logout>
+                    <button
+                      type="submit"
+                      class="rounded-md border border-border px-2.5 py-1 text-sm transition-colors hover:bg-muted"
+                    >
+                      Salir
+                    </button>
+                  </form>
+                </div>
+              ) : null}
             </div>
-          ) : null
-        }
-      </div>
-    </header>
-    <main class="mx-auto max-w-6xl px-4 py-8">
-      <slot />
-    </main>
+          </header>
+          <main class="mx-auto max-w-6xl px-4 py-8">
+            <slot />
+          </main>
+        </>
+      )
+    }
 
     <script>
-      // Logout via fetch para poder redirigir tras limpiar la sesión.
       const form = document.querySelector<HTMLFormElement>('form[data-logout]');
       form?.addEventListener('submit', async (event) => {
         event.preventDefault();

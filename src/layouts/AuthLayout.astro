@@ -1,0 +1,57 @@
+---
+import { ClientRouter } from 'astro:transitions';
+
+import '@/styles/global.css';
+
+interface Props {
+  title?: string;
+  brandImage?: string;
+  tagline?: string;
+}
+
+const {
+  title = 'TrackForge',
+  brandImage = '/brand/Gemini_Generated_Image_pdu6w0pdu6w0pdu6__2_-7f65fb8b-cf4d-4273-98ca-128a012aa8ca.png',
+  tagline = 'Raw effort. Precision data.',
+} = Astro.props;
+---
+
+<html lang="es" class="dark">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="generator" content={Astro.generator} />
+    <title>{title}</title>
+    <ClientRouter />
+  </head>
+  <body class="min-h-svh bg-background text-foreground antialiased">
+    <div class="grid min-h-svh lg:grid-cols-2">
+      <!-- Form panel -->
+      <div class="flex flex-col justify-center px-6 py-12 sm:px-12 lg:px-16">
+        <slot />
+      </div>
+
+      <!-- Brand panel (hidden on mobile) -->
+      <div class="relative hidden lg:block">
+        <img
+          src={brandImage}
+          alt="TrackForge — sport tech performance dashboard"
+          class="absolute inset-0 size-full object-cover"
+        />
+        <div
+          class="absolute inset-0 bg-linear-to-t from-background via-background/60 to-background/20"
+        >
+        </div>
+        <div class="relative flex h-full flex-col justify-end p-12">
+          <p class="max-w-sm text-2xl font-semibold tracking-tight text-foreground">
+            {tagline}
+          </p>
+          <p class="mt-3 max-w-sm text-sm text-muted-foreground">
+            High-fidelity metrics to engineer your performance. No fluff — just data.
+          </p>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

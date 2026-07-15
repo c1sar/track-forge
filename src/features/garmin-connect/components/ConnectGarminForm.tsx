@@ -14,6 +14,7 @@ import { Button } from '@/shared/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/ui/card';
 import { Input } from '@/shared/ui/input';
 import { Label } from '@/shared/ui/label';
+import { Separator } from '@/shared/ui/separator';
 
 interface ConnectResponse {
   ok: boolean;
@@ -58,7 +59,7 @@ export function ConnectGarminForm() {
       window.location.href = '/dashboard';
       return;
     }
-    setError(response.message ?? 'No se pudo conectar con Garmin.');
+    setError(response.message ?? 'Could not connect to Garmin.');
   }
 
   const onCredentialsSubmit = credentialsForm.handleSubmit(async (values) => {
@@ -67,7 +68,7 @@ export function ConnectGarminForm() {
     try {
       handleResponse(await postJson('/api/garmin/connect', values));
     } catch {
-      setError('Error de red al contactar el servidor.');
+      setError('Network error. Check your connection and retry.');
     } finally {
       setPending(false);
     }
@@ -82,75 +83,97 @@ export function ConnectGarminForm() {
     try {
       handleResponse(await postJson('/api/garmin/mfa', { mfaSessionId, mfaCode: values.mfaCode }));
     } catch {
-      setError('Error de red al verificar el código.');
+      setError('Network error verifying code.');
     } finally {
       setPending(false);
     }
   });
 
   return (
-    <Card className="w-full max-w-lg">
+    <Card className="w-full border-border shadow-none">
       <CardHeader>
-        <CardTitle>Vincular Garmin Connect</CardTitle>
+        <CardTitle className="font-heading text-lg">Link Garmin Connect</CardTitle>
         <CardDescription>
-          Tus credenciales solo se usan para el login y no se guardan. Únicamente se almacenan de
-          forma cifrada los tokens de acceso.
+          Credentials are used only for authentication — never stored. Only encrypted access tokens
+          are persisted.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         <form className="space-y-4" onSubmit={onCredentialsSubmit}>
           <div className="space-y-2">
-            <Label htmlFor="email">Email de Garmin</Label>
+            <Label
+              htmlFor="email"
+              className="text-xs tracking-wide text-muted-foreground uppercase"
+            >
+              Garmin email
+            </Label>
             <Input
               id="email"
               type="email"
               autoComplete="username"
-              placeholder="tu-email@ejemplo.com"
+              placeholder="athlete@email.com"
+              className="h-10 border-border bg-card"
               disabled={Boolean(mfaSessionId)}
               {...credentialsForm.register('email')}
             />
             {credentialsForm.formState.errors.email ? (
-              <p className="text-sm text-destructive">
+              <p className="text-xs text-destructive">
                 {credentialsForm.formState.errors.email.message}
               </p>
             ) : null}
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="password">Contraseña de Garmin</Label>
+            <Label
+              htmlFor="password"
+              className="text-xs tracking-wide text-muted-foreground uppercase"
+            >
+              Garmin password
+            </Label>
             <Input
               id="password"
               type="password"
               autoComplete="current-password"
               placeholder="••••••••"
+              className="h-10 border-border bg-card"
               disabled={Boolean(mfaSessionId)}
               {...credentialsForm.register('password')}
             />
             {credentialsForm.formState.errors.password ? (
-              <p className="text-sm text-destructive">
+              <p className="text-xs text-destructive">
                 {credentialsForm.formState.errors.password.message}
               </p>
             ) : null}
           </div>
 
-          <Button type="submit" className="w-full" disabled={pending || Boolean(mfaSessionId)}>
+          <Button
+            type="submit"
+            className="h-10 w-full font-semibold tracking-wide uppercase"
+            disabled={pending || Boolean(mfaSessionId)}
+          >
             {pending && !mfaSessionId ? <Loader2 className="size-4 animate-spin" /> : null}
-            Conectar
+            Connect
           </Button>
         </form>
 
         {mfaSessionId ? (
-          <form className="space-y-4 border-t pt-4" onSubmit={onMfaSubmit}>
-            <Alert className="border-amber-200 bg-amber-50 text-amber-950 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-50">
-              <ShieldCheck className="size-4" />
-              <AlertTitle>Verificación MFA</AlertTitle>
+          <form className="space-y-4" onSubmit={onMfaSubmit}>
+            <Separator />
+            <Alert className="border-primary/30 bg-primary/5">
+              <ShieldCheck className="size-4 text-primary" />
+              <AlertTitle>MFA verification</AlertTitle>
               <AlertDescription>
-                Garmin envió un código a tu email o app authenticator. Introdúcelo abajo.
+                Garmin sent a code to your email or authenticator app. Enter it below.
               </AlertDescription>
             </Alert>
 
             <div className="space-y-2">
-              <Label htmlFor="mfaCode">Código MFA (6 dígitos)</Label>
+              <Label
+                htmlFor="mfaCode"
+                className="text-xs tracking-wide text-muted-foreground uppercase"
+              >
+                MFA code (6 digits)
+              </Label>
               <Input
                 id="mfaCode"
                 type="text"
@@ -158,10 +181,11 @@ export function ConnectGarminForm() {
                 autoComplete="one-time-code"
                 placeholder="123456"
                 maxLength={6}
+                className="h-10 border-border bg-card font-mono tracking-widest"
                 {...mfaForm.register('mfaCode')}
               />
               {mfaForm.formState.errors.mfaCode ? (
-                <p className="text-sm text-destructive">
+                <p className="text-xs text-destructive">
                   {mfaForm.formState.errors.mfaCode.message}
                 </p>
               ) : null}
@@ -179,11 +203,11 @@ export function ConnectGarminForm() {
                   mfaForm.reset({ mfaCode: '' });
                 }}
               >
-                Reiniciar
+                Reset
               </Button>
               <Button type="submit" className="flex-1" disabled={pending}>
                 {pending ? <Loader2 className="size-4 animate-spin" /> : null}
-                Verificar código
+                Verify
               </Button>
             </div>
           </form>
@@ -192,17 +216,17 @@ export function ConnectGarminForm() {
         {error ? (
           <Alert variant="destructive">
             <XCircle className="size-4" />
-            <AlertTitle>Error</AlertTitle>
+            <AlertTitle>Connection failed</AlertTitle>
             <AlertDescription>{error}</AlertDescription>
           </Alert>
         ) : null}
 
         {!error && !mfaSessionId ? (
-          <Alert>
-            <CheckCircle2 className="size-4" />
-            <AlertTitle>Listo para conectar</AlertTitle>
+          <Alert className="border-success/30 bg-success/5">
+            <CheckCircle2 className="size-4 text-success" />
+            <AlertTitle>Ready to link</AlertTitle>
             <AlertDescription>
-              Al conectar, sincronizaremos automáticamente tus últimas 2 semanas.
+              On connect, we automatically sync your last 2 weeks of metrics.
             </AlertDescription>
           </Alert>
         ) : null}

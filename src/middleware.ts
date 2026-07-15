@@ -3,7 +3,7 @@ import { defineMiddleware } from 'astro:middleware';
 import { readSession } from '@/features/auth/lib/session';
 import { getEnv } from '@/shared/lib/env';
 
-const PROTECTED_PREFIXES = ['/dashboard', '/connect'];
+const PROTECTED_PREFIXES = ['/dashboard', '/data', '/connect', '/settings'];
 const GUEST_ONLY_PATHS = ['/login', '/register'];
 
 export const onRequest = defineMiddleware(async (context, next) => {

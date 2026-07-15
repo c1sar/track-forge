@@ -1,0 +1,10 @@
+#!/bin/sh
+# Run Biome only on staged files, auto-fix what is safe, and re-stage the fixes.
+# A non-zero exit (unfixable errors remain) aborts the commit.
+pnpm exec biome check --staged --write --no-errors-on-unmatched
+STATUS=$?
+
+# Re-stage files that Biome auto-fixed (only touches already-staged paths).
+git update-index --again
+
+exit $STATUS

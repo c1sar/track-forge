@@ -1,10 +1,11 @@
 ---
 import { AuthForm } from '@/features/auth/components/AuthForm';
-import Layout from '@/layouts/Layout.astro';
+import AuthLayout from '@/layouts/AuthLayout.astro';
 ---
 
-<Layout title="Iniciar sesión · Garmin Cloud">
-  <div class="flex min-h-[70vh] items-center justify-center">
-    <AuthForm mode="login" client:load />
-  </div>
-</Layout>
+<AuthLayout
+  title="Sign in · TrackForge"
+  brandImage="/brand/Gemini_Generated_Image_pdu6w0pdu6w0pdu6__2_-7f65fb8b-cf4d-4273-98ca-128a012aa8ca.png"
+>
+  <AuthForm mode="login" client:load />
+</AuthLayout>

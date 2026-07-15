@@ -1,0 +1,18 @@
+---
+import { TrackForgeApp } from '@/features/app-shell/components/TrackForgeApp';
+import Layout from '@/layouts/Layout.astro';
+
+const currentUser = Astro.locals.currentUser;
+if (!currentUser) {
+  return Astro.redirect('/login');
+}
+---
+
+<Layout title="Settings · TrackForge" bare>
+  <TrackForgeApp
+    userEmail={currentUser.email}
+    currentPage="settings"
+    client:load
+    transition:persist="trackforge-shell"
+  />
+</Layout>

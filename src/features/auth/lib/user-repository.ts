@@ -6,14 +6,14 @@ export class UserRepository {
 
   async findByEmail(email: string): Promise<UserRow | null> {
     return this.db
-      .prepare('SELECT id, email, password_hash, created_at FROM users WHERE email = ?')
+      .prepare('SELECT id, email, password_hash, created_at, timezone FROM users WHERE email = ?')
       .bind(email)
       .first<UserRow>();
   }
 
   async findById(id: string): Promise<UserRow | null> {
     return this.db
-      .prepare('SELECT id, email, password_hash, created_at FROM users WHERE id = ?')
+      .prepare('SELECT id, email, password_hash, created_at, timezone FROM users WHERE id = ?')
       .bind(id)
       .first<UserRow>();
   }
@@ -24,6 +24,7 @@ export class UserRepository {
       email: input.email,
       password_hash: input.passwordHash,
       created_at: new Date().toISOString(),
+      timezone: null,
     };
 
     await this.db
@@ -32,5 +33,20 @@ export class UserRepository {
       .run();
 
     return row;
+  }
+
+  async updateTimezone(userId: string, timezone: string | null): Promise<void> {
+    await this.db
+      .prepare('UPDATE users SET timezone = ? WHERE id = ?')
+      .bind(timezone, userId)
+      .run();
+  }
+
+  async getTimezone(userId: string): Promise<string | null> {
+    const row = await this.db
+      .prepare('SELECT timezone FROM users WHERE id = ?')
+      .bind(userId)
+      .first<{ timezone: string | null }>();
+    return row?.timezone ?? null;
   }
 }
